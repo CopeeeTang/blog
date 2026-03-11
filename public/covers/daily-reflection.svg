@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f0ebe3;stop-opacity:1" />
+      <stop offset="60%" style="stop-color:#e0d5c6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#d4c8b6;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="wave-grad-1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#a88264;stop-opacity:0.15" />
+      <stop offset="50%" style="stop-color:#9b7158;stop-opacity:0.35" />
+      <stop offset="100%" style="stop-color:#a88264;stop-opacity:0.1" />
+    </linearGradient>
+    <linearGradient id="wave-grad-2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#9b7158;stop-opacity:0.2" />
+      <stop offset="50%" style="stop-color:#a88264;stop-opacity:0.5" />
+      <stop offset="100%" style="stop-color:#9b7158;stop-opacity:0.1" />
+    </linearGradient>
+    <linearGradient id="wave-grad-3" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#a88264;stop-opacity:0.3" />
+      <stop offset="40%" style="stop-color:#7a5840;stop-opacity:0.6" />
+      <stop offset="100%" style="stop-color:#a88264;stop-opacity:0.15" />
+    </linearGradient>
+    <filter id="blur-soft">
+      <feGaussianBlur stdDeviation="2.5" />
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg-grad)" />
+
+  <!-- Subtle texture dots -->
+  <g opacity="0.12">
+    <circle cx="80" cy="80" r="2" fill="#9b7158"/>
+    <circle cx="200" cy="50" r="1.5" fill="#9b7158"/>
+    <circle cx="350" cy="100" r="2" fill="#9b7158"/>
+    <circle cx="500" cy="60" r="1.5" fill="#9b7158"/>
+    <circle cx="700" cy="90" r="2" fill="#9b7158"/>
+    <circle cx="900" cy="45" r="1.5" fill="#9b7158"/>
+    <circle cx="1050" cy="80" r="2" fill="#9b7158"/>
+    <circle cx="1150" cy="55" r="1.5" fill="#9b7158"/>
+    <circle cx="120" cy="560" r="2" fill="#9b7158"/>
+    <circle cx="300" cy="590" r="1.5" fill="#9b7158"/>
+    <circle cx="600" cy="570" r="2" fill="#9b7158"/>
+    <circle cx="850" cy="590" r="1.5" fill="#9b7158"/>
+    <circle cx="1100" cy="565" r="2" fill="#9b7158"/>
+  </g>
+
+  <!-- Wave layer 1 - wide slow waves, blurred for depth -->
+  <path d="M-50,420 C100,390 200,450 350,420 C500,390 600,440 750,415 C900,390 1000,445 1150,420 C1250,405 1300,420 1300,420 L1300,630 L-50,630 Z"
+        fill="url(#wave-grad-1)" filter="url(#blur-soft)" />
+
+  <!-- Wave layer 2 - medium -->
+  <path d="M-50,370 C80,330 180,380 300,355 C420,330 540,375 680,350 C820,325 940,370 1060,348 C1150,332 1250,355 1300,345 L1300,630 L-50,630 Z"
+        fill="url(#wave-grad-2)" opacity="0.7" />
+
+  <!-- Wave layer 3 - tighter, darker -->
+  <path d="M-50,460 C120,435 240,470 380,450 C520,430 640,465 800,445 C960,425 1080,458 1200,440 C1260,432 1300,445 1300,445 L1300,630 L-50,630 Z"
+        fill="url(#wave-grad-3)" opacity="0.6" />
+
+  <!-- Flow lines - top section -->
+  <path d="M-50,180 C150,155 280,200 450,175 C620,150 740,185 900,165 C1050,145 1150,170 1300,158"
+        stroke="#a88264" stroke-width="1.5" fill="none" opacity="0.3" />
+  <path d="M-50,210 C100,192 250,225 400,205 C550,185 700,215 860,198 C1000,182 1120,205 1300,195"
+        stroke="#9b7158" stroke-width="1" fill="none" opacity="0.2" />
+  <path d="M-50,240 C130,222 270,252 430,235 C590,218 730,245 900,230 C1050,215 1170,235 1300,228"
+        stroke="#a88264" stroke-width="0.8" fill="none" opacity="0.2" />
+
+  <!-- Central accent orbs -->
+  <circle cx="600" cy="315" r="180" fill="#a88264" opacity="0.06" />
+  <circle cx="600" cy="315" r="110" fill="#9b7158" opacity="0.08" />
+  <circle cx="600" cy="315" r="55" fill="#7a5840" opacity="0.10" />
+
+  <!-- Thin horizontal rules suggesting journaling lines -->
+  <line x1="180" y1="270" x2="520" y2="270" stroke="#9b7158" stroke-width="1" opacity="0.25" />
+  <line x1="180" y1="295" x2="480" y2="295" stroke="#9b7158" stroke-width="0.8" opacity="0.18" />
+  <line x1="180" y1="320" x2="500" y2="320" stroke="#9b7158" stroke-width="0.8" opacity="0.18" />
+  <line x1="180" y1="345" x2="440" y2="345" stroke="#9b7158" stroke-width="0.8" opacity="0.15" />
+
+  <line x1="680" y1="270" x2="1020" y2="270" stroke="#9b7158" stroke-width="1" opacity="0.25" />
+  <line x1="680" y1="295" x2="980" y2="295" stroke="#9b7158" stroke-width="0.8" opacity="0.18" />
+  <line x1="680" y1="320" x2="1000" y2="320" stroke="#9b7158" stroke-width="0.8" opacity="0.18" />
+  <line x1="680" y1="345" x2="950" y2="345" stroke="#9b7158" stroke-width="0.8" opacity="0.15" />
+
+  <!-- Small geometric accents -->
+  <rect x="90" y="285" width="40" height="40" rx="2" fill="none" stroke="#a88264" stroke-width="1.2" opacity="0.3" transform="rotate(15,110,305)"/>
+  <rect x="1070" y="280" width="40" height="40" rx="2" fill="none" stroke="#9b7158" stroke-width="1.2" opacity="0.3" transform="rotate(-10,1090,300)"/>
+
+  <!-- Sun/circle motif top right -->
+  <circle cx="1080" cy="120" r="55" fill="none" stroke="#a88264" stroke-width="1.5" opacity="0.25"/>
+  <circle cx="1080" cy="120" r="38" fill="none" stroke="#9b7158" stroke-width="1" opacity="0.2"/>
+  <circle cx="1080" cy="120" r="18" fill="#a88264" opacity="0.15"/>
+
+  <!-- Moon crescent motif top left -->
+  <circle cx="120" cy="140" r="42" fill="none" stroke="#9b7158" stroke-width="1.5" opacity="0.22"/>
+  <circle cx="138" cy="128" r="32" fill="#f0ebe3" opacity="0.7"/>
+
+  <!-- Bottom decorative band -->
+  <rect x="0" y="610" width="1200" height="20" fill="#9b7158" opacity="0.12"/>
+  <rect x="0" y="618" width="1200" height="12" fill="#7a5840" opacity="0.08"/>
+</svg>

@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg-paper" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a1a;stop-opacity:1" />
+      <stop offset="40%" style="stop-color:#1e1a17;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#231f1b;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="layer-grad-1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#a88264;stop-opacity:0.6" />
+      <stop offset="100%" style="stop-color:#7a5840;stop-opacity:0.3" />
+    </linearGradient>
+    <linearGradient id="layer-grad-2" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#9b7158;stop-opacity:0.5" />
+      <stop offset="100%" style="stop-color:#a88264;stop-opacity:0.2" />
+    </linearGradient>
+    <linearGradient id="layer-grad-3" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#c4a484;stop-opacity:0.35" />
+      <stop offset="100%" style="stop-color:#a88264;stop-opacity:0.15" />
+    </linearGradient>
+    <radialGradient id="center-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#a88264;stop-opacity:0.5" />
+      <stop offset="60%" style="stop-color:#a88264;stop-opacity:0.1" />
+      <stop offset="100%" style="stop-color:#a88264;stop-opacity:0" />
+    </radialGradient>
+    <radialGradient id="ring-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#c4a484;stop-opacity:0.0" />
+      <stop offset="70%" style="stop-color:#a88264;stop-opacity:0.2" />
+      <stop offset="100%" style="stop-color:#a88264;stop-opacity:0.0" />
+    </radialGradient>
+    <filter id="layer-blur-1">
+      <feGaussianBlur stdDeviation="1.5" />
+    </filter>
+    <filter id="layer-blur-2">
+      <feGaussianBlur stdDeviation="3" />
+    </filter>
+    <filter id="depth-blur">
+      <feGaussianBlur stdDeviation="6" />
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg-paper)" />
+
+  <!-- Deep background layers - blurred for depth -->
+  <g filter="url(#depth-blur)" opacity="0.4">
+    <polygon points="150,580 450,500 750,560 1050,490 1200,540 1200,630 0,630"
+             fill="#7a5840" opacity="0.3"/>
+    <polygon points="0,520 300,460 600,510 900,445 1200,490 1200,630 0,630"
+             fill="#9b7158" opacity="0.25"/>
+  </g>
+
+  <!-- Layer system - back to front, each slightly smaller and shifted -->
+  <!-- Layer 6 - deepest, largest, most diffuse -->
+  <g filter="url(#layer-blur-2)">
+    <polygon points="160,500 380,440 600,480 820,435 1040,465 1100,520 700,560 300,545"
+             fill="#7a5840" opacity="0.2"/>
+  </g>
+
+  <!-- Layer 5 -->
+  <polygon points="185,470 395,415 600,452 805,410 1010,438 1065,490 680,528 320,516"
+           fill="#7a5840" opacity="0.3" filter="url(#layer-blur-1)"/>
+
+  <!-- Layer 4 -->
+  <polygon points="210,442 410,390 600,426 790,387 985,413 1032,462 660,498 340,488"
+           fill="#9b7158" opacity="0.28"/>
+
+  <!-- Layer 3 -->
+  <polygon points="235,415 425,366 600,400 775,365 960,390 1000,436 640,470 360,461"
+           fill="#9b7158" opacity="0.32"/>
+
+  <!-- Layer 2 -->
+  <polygon points="260,388 440,342 600,374 760,343 935,367 968,410 620,442 380,434"
+           fill="#a88264" opacity="0.35"/>
+
+  <!-- Layer 1 - front, most opaque -->
+  <polygon points="285,362 455,318 600,348 745,322 910,344 936,384 600,414 400,407"
+           fill="#a88264" opacity="0.5" filter="url(#layer-blur-1)"/>
+
+  <!-- Top surface - brightest layer -->
+  <polygon points="310,338 470,296 600,322 730,300 885,322 904,360 600,388 420,382"
+           fill="#b89070" opacity="0.55"/>
+
+  <!-- Center glow overlay -->
+  <ellipse cx="600" cy="350" rx="350" ry="180" fill="url(#center-glow)"/>
+
+  <!-- Concentric rings suggesting depth/resonance -->
+  <ellipse cx="600" cy="350" rx="280" ry="140" fill="none" stroke="#a88264" stroke-width="0.8" opacity="0.25"/>
+  <ellipse cx="600" cy="350" rx="220" ry="110" fill="none" stroke="#a88264" stroke-width="0.8" opacity="0.3"/>
+  <ellipse cx="600" cy="350" rx="160" ry="80" fill="none" stroke="#c4a484" stroke-width="1" opacity="0.35"/>
+  <ellipse cx="600" cy="350" rx="100" ry="50" fill="none" stroke="#c4a484" stroke-width="1.2" opacity="0.4"/>
+  <ellipse cx="600" cy="350" rx="50" ry="25" fill="none" stroke="#d4b496" stroke-width="1.5" opacity="0.5"/>
+
+  <!-- Ring glow -->
+  <ellipse cx="600" cy="350" rx="240" ry="120" fill="url(#ring-glow)"/>
+
+  <!-- Abstract dot field - scattered like data points -->
+  <g opacity="0.45">
+    <circle cx="200" cy="250" r="3" fill="#a88264"/>
+    <circle cx="280" cy="220" r="2" fill="#9b7158"/>
+    <circle cx="360" cy="240" r="3.5" fill="#a88264"/>
+    <circle cx="420" cy="210" r="2" fill="#b89070"/>
+    <circle cx="500" cy="230" r="2.5" fill="#9b7158"/>
+    <circle cx="700" cy="210" r="2.5" fill="#a88264"/>
+    <circle cx="780" cy="240" r="2" fill="#9b7158"/>
+    <circle cx="850" cy="220" r="3" fill="#a88264"/>
+    <circle cx="930" cy="250" r="2" fill="#b89070"/>
+    <circle cx="990" cy="235" r="3.5" fill="#9b7158"/>
+    <!-- Lower dots -->
+    <circle cx="150" cy="430" r="2" fill="#a88264"/>
+    <circle cx="250" cy="460" r="3" fill="#9b7158"/>
+    <circle cx="350" cy="440" r="2" fill="#a88264"/>
+    <circle cx="850" cy="450" r="3" fill="#a88264"/>
+    <circle cx="950" cy="435" r="2" fill="#9b7158"/>
+    <circle cx="1050" cy="455" r="2.5" fill="#a88264"/>
+  </g>
+
+  <!-- Thin connecting lines between dot clusters (suggesting neural/attention connections) -->
+  <g stroke="#a88264" stroke-width="0.6" opacity="0.2">
+    <line x1="200" y1="250" x2="280" y2="220"/>
+    <line x1="280" y1="220" x2="360" y2="240"/>
+    <line x1="360" y1="240" x2="420" y2="210"/>
+    <line x1="420" y1="210" x2="500" y2="230"/>
+    <line x1="700" y1="210" x2="780" y2="240"/>
+    <line x1="780" y1="240" x2="850" y2="220"/>
+    <line x1="850" y1="220" x2="930" y2="250"/>
+    <line x1="930" y1="250" x2="990" y2="235"/>
+    <line x1="500" y1="230" x2="600" y2="322"/>
+    <line x1="700" y1="210" x2="600" y2="322"/>
+    <line x1="360" y1="240" x2="600" y2="322"/>
+    <line x1="850" y1="220" x2="600" y2="322"/>
+  </g>
+
+  <!-- Central focal point -->
+  <circle cx="600" cy="322" r="18" fill="#a88264" opacity="0.4"/>
+  <circle cx="600" cy="322" r="9" fill="#c4a484" opacity="0.7"/>
+  <circle cx="600" cy="322" r="4" fill="#e0d5c6" opacity="0.9"/>
+
+  <!-- Corner marks -->
+  <g stroke="#a88264" stroke-width="1" fill="none" opacity="0.2">
+    <path d="M30,30 L30,65 L65,65"/>
+    <path d="M1170,30 L1170,65 L1135,65"/>
+    <path d="M30,600 L30,565 L65,565"/>
+    <path d="M1170,600 L1170,565 L1135,565"/>
+  </g>
+
+  <!-- Horizon line -->
+  <line x1="0" y1="550" x2="1200" y2="550" stroke="#a88264" stroke-width="0.5" opacity="0.15"/>
+  <line x1="0" y1="560" x2="1200" y2="560" stroke="#9b7158" stroke-width="0.3" opacity="0.1"/>
+</svg>

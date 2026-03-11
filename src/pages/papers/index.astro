@@ -1,0 +1,113 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const allPosts = await getCollection('papers', ({ data }) => !data.draft);
+const sortedPosts = allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+---
+
+<BaseLayout
+  title="Papers — Daily Insights"
+  description="Notes and reviews on research papers."
+>
+  <!-- Page Header -->
+  <div class="border-b border-[#e5e5e5] py-12 md:py-16">
+    <div class="site-container">
+      <p class="mb-3 text-xs font-medium uppercase tracking-widest text-primary-600">
+        Research
+      </p>
+      <h1 class="font-display text-4xl tracking-tight text-ink md:text-5xl">Papers</h1>
+      <p class="mt-4 max-w-xl text-lg text-ink-light">
+        Reading notes, summaries, and brainstorms on research papers.
+      </p>
+    </div>
+  </div>
+
+  <!-- Post List -->
+  <div class="site-container py-12 md:py-16">
+    {sortedPosts.length === 0 ? (
+      <div class="rounded-xl border border-dashed border-[#e5e5e5] py-20 text-center">
+        <p class="text-warm-muted">No paper reviews yet.</p>
+      </div>
+    ) : (
+      <div class="space-y-4">
+        {sortedPosts.map((post) => (
+          <article class="group rounded-xl border border-[#e5e5e5] bg-white p-6 transition-all hover:border-[#d4d4d4] hover:shadow-sm">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
+              {/* Cover image */}
+              {post.data.cover && (
+                <a href={`/blog/papers/${post.slug}`} class="flex-shrink-0">
+                  <img
+                    src={post.data.cover}
+                    alt={post.data.coverAlt ?? post.data.title}
+                    class="h-24 w-36 rounded-lg object-cover"
+                  />
+                </a>
+              )}
+
+              <div class="flex-1 min-w-0">
+                {/* Paper metadata */}
+                {(post.data.venue || post.data.year) && (
+                  <div class="mb-2 flex flex-wrap items-center gap-2 text-xs text-warm-muted">
+                    {post.data.venue && (
+                      <span class="rounded bg-primary-50 px-2 py-0.5 font-medium text-primary-600">
+                        {post.data.venue}
+                      </span>
+                    )}
+                    {post.data.year && <span>{post.data.year}</span>}
+                  </div>
+                )}
+
+                {/* Post title */}
+                <a href={`/blog/papers/${post.slug}`}>
+                  <h2 class="font-display mb-1 text-lg text-ink transition-colors group-hover:text-primary-700 leading-snug">
+                    {post.data.title}
+                  </h2>
+                </a>
+
+                {/* Original paper title */}
+                {post.data.paperTitle && post.data.paperTitle !== post.data.title && (
+                  <p class="mb-2 text-sm italic text-warm-muted">
+                    "{post.data.paperTitle}"
+                  </p>
+                )}
+
+                {/* Authors */}
+                {post.data.authors && post.data.authors.length > 0 && (
+                  <p class="mb-3 text-sm text-warm-muted">
+                    {post.data.authors.slice(0, 4).join(', ')}
+                    {post.data.authors.length > 4 && ' et al.'}
+                  </p>
+                )}
+
+                {/* Summary */}
+                {post.data.summary && (
+                  <p class="mb-3 line-clamp-2 text-sm text-ink-light">
+                    {post.data.summary}
+                  </p>
+                )}
+
+                {/* Footer: date + tags */}
+                <div class="flex flex-wrap items-center gap-3">
+                  <time
+                    datetime={post.data.date.toISOString()}
+                    class="text-xs text-warm-muted"
+                  >
+                    {post.data.date.toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </time>
+                  {post.data.tags?.slice(0, 4).map((tag) => (
+                    <span class="tag-badge">#{tag}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    )}
+  </div>
+</BaseLayout>

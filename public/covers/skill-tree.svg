@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg-warm" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f0ebe3;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e0d5c6;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="trunk-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#a88264;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7a5840;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="branch-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#9b7158;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#c4a484;stop-opacity:0.6" />
+    </linearGradient>
+    <radialGradient id="leaf-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#a88264;stop-opacity:0.25" />
+      <stop offset="100%" style="stop-color:#a88264;stop-opacity:0" />
+    </radialGradient>
+    <filter id="soft-shadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#9b7158" flood-opacity="0.2"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg-warm)" />
+
+  <!-- Subtle ground texture -->
+  <ellipse cx="600" cy="590" rx="500" ry="30" fill="#9b7158" opacity="0.08"/>
+
+  <!-- Main trunk -->
+  <path d="M600,580 C598,540 597,500 600,460 C603,420 600,380 600,340"
+        stroke="url(#trunk-grad)" stroke-width="14" fill="none" stroke-linecap="round"/>
+  <path d="M600,340 C600,300 598,270 600,240"
+        stroke="#a88264" stroke-width="10" fill="none" stroke-linecap="round"/>
+  <path d="M600,240 C600,210 600,190 600,170"
+        stroke="#a88264" stroke-width="7" fill="none" stroke-linecap="round"/>
+
+  <!-- Primary branches - left -->
+  <path d="M600,420 C570,400 530,385 480,370"
+        stroke="#9b7158" stroke-width="7" fill="none" stroke-linecap="round"/>
+  <path d="M600,360 C560,340 510,325 450,310"
+        stroke="#9b7158" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M600,300 C555,275 500,260 430,248"
+        stroke="#a88264" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <path d="M600,240 C560,215 510,202 440,195"
+        stroke="#a88264" stroke-width="4" fill="none" stroke-linecap="round"/>
+
+  <!-- Primary branches - right -->
+  <path d="M600,420 C630,400 670,385 720,370"
+        stroke="#9b7158" stroke-width="7" fill="none" stroke-linecap="round"/>
+  <path d="M600,360 C640,340 690,325 750,310"
+        stroke="#9b7158" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M600,300 C645,275 700,260 770,248"
+        stroke="#a88264" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <path d="M600,240 C640,215 690,202 760,195"
+        stroke="#a88264" stroke-width="4" fill="none" stroke-linecap="round"/>
+
+  <!-- Secondary branches - left side -->
+  <path d="M480,370 C460,350 435,335 400,320"
+        stroke="#b89070" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path d="M480,370 C470,348 465,330 460,310"
+        stroke="#b89070" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+  <path d="M450,310 C425,290 395,278 355,268"
+        stroke="#b89070" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+  <path d="M450,310 C438,290 432,272 430,252"
+        stroke="#b89070" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M430,248 C400,228 365,215 320,205"
+        stroke="#c4a484" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M430,248 C415,228 408,210 405,190"
+        stroke="#c4a484" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M440,195 C415,175 385,162 345,155"
+        stroke="#c4a484" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M440,195 C430,175 425,158 422,138"
+        stroke="#c4a484" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+  <!-- Secondary branches - right side -->
+  <path d="M720,370 C742,350 768,335 804,320"
+        stroke="#b89070" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path d="M720,370 C730,348 736,330 740,310"
+        stroke="#b89070" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+  <path d="M750,310 C776,290 808,278 848,268"
+        stroke="#b89070" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+  <path d="M750,310 C762,290 768,272 770,252"
+        stroke="#b89070" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M770,248 C800,228 836,215 882,205"
+        stroke="#c4a484" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M770,248 C785,228 792,210 796,190"
+        stroke="#c4a484" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M760,195 C786,175 818,162 858,155"
+        stroke="#c4a484" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M760,195 C770,175 776,158 778,138"
+        stroke="#c4a484" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+  <!-- Tertiary twigs -->
+  <path d="M400,320 C382,305 362,296 335,290"
+        stroke="#d4b496" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M355,268 C335,255 315,248 285,244"
+        stroke="#d4b496" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M320,205 C300,193 278,186 250,182"
+        stroke="#d4b496" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M345,155 C323,143 300,136 272,132"
+        stroke="#d4b496" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M804,320 C822,305 844,296 870,290"
+        stroke="#d4b496" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M848,268 C868,255 890,248 918,244"
+        stroke="#d4b496" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M882,205 C902,193 925,186 952,182"
+        stroke="#d4b496" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M858,155 C878,143 903,136 930,132"
+        stroke="#d4b496" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Leaf nodes - small filled circles at tips -->
+  <g filter="url(#soft-shadow)">
+    <!-- Left cluster -->
+    <circle cx="335" cy="290" r="9" fill="#a88264" opacity="0.75"/>
+    <circle cx="285" cy="244" r="8" fill="#9b7158" opacity="0.7"/>
+    <circle cx="250" cy="182" r="7" fill="#a88264" opacity="0.65"/>
+    <circle cx="272" cy="132" r="7" fill="#b89070" opacity="0.7"/>
+    <circle cx="405" cy="190" r="8" fill="#9b7158" opacity="0.7"/>
+    <circle cx="422" cy="138" r="7" fill="#a88264" opacity="0.65"/>
+    <circle cx="460" cy="310" r="9" fill="#a88264" opacity="0.75"/>
+    <circle cx="320" cy="205" r="8" fill="#b89070" opacity="0.65"/>
+    <!-- Right cluster -->
+    <circle cx="870" cy="290" r="9" fill="#a88264" opacity="0.75"/>
+    <circle cx="918" cy="244" r="8" fill="#9b7158" opacity="0.7"/>
+    <circle cx="952" cy="182" r="7" fill="#a88264" opacity="0.65"/>
+    <circle cx="930" cy="132" r="7" fill="#b89070" opacity="0.7"/>
+    <circle cx="796" cy="190" r="8" fill="#9b7158" opacity="0.7"/>
+    <circle cx="778" cy="138" r="7" fill="#a88264" opacity="0.65"/>
+    <circle cx="740" cy="310" r="9" fill="#a88264" opacity="0.75"/>
+    <circle cx="882" cy="205" r="8" fill="#b89070" opacity="0.65"/>
+  </g>
+
+  <!-- Root node - top of trunk glow -->
+  <circle cx="600" cy="160" r="25" fill="url(#leaf-glow)"/>
+  <circle cx="600" cy="160" r="14" fill="#a88264" opacity="0.5" filter="url(#soft-shadow)"/>
+  <circle cx="600" cy="160" r="7" fill="#c4a484"/>
+
+  <!-- Branch junction dots -->
+  <g opacity="0.55">
+    <circle cx="600" cy="420" r="5" fill="#7a5840"/>
+    <circle cx="600" cy="360" r="5" fill="#7a5840"/>
+    <circle cx="600" cy="300" r="5" fill="#9b7158"/>
+    <circle cx="600" cy="240" r="4" fill="#9b7158"/>
+  </g>
+
+  <!-- Subtle radial glow behind tree -->
+  <circle cx="600" cy="350" r="280" fill="url(#leaf-glow)" opacity="0.4"/>
+</svg>

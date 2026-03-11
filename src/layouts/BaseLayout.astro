@@ -1,0 +1,109 @@
+---
+/**
+ * BaseLayout.astro
+ * HTML shell for every page. Provides head meta, OG tags, font loading,
+ * global styles, skip link, Header, slot, and Footer.
+ */
+
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import '../styles/global.css';
+
+export interface Props {
+  /** Page <title>. Defaults to site name if not provided. */
+  title?: string;
+  /** Meta description for SEO. */
+  description?: string;
+  /** OG / Twitter card image URL (absolute). */
+  image?: string;
+  /** Primary language of this page. */
+  lang?: 'zh' | 'en';
+  /** Current path, forwarded to Header for active-link highlighting. */
+  currentPath?: string;
+}
+
+const {
+  title,
+  description = 'Tang Xin 的个人日志 — 记录每日思考、洞见与论文笔记。',
+  image,
+  lang = 'zh',
+  currentPath = Astro.url.pathname,
+} = Astro.props;
+
+const siteName = 'Tang Xin';
+const siteUrl = Astro.site?.toString().replace(/\/$/, '') ?? '';
+const pageTitle = title ? `${title} — ${siteName}` : siteName;
+const ogImage = image ?? `${siteUrl}/og-default.png`;
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).toString();
+---
+
+<!doctype html>
+<html lang={lang} class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+
+    <!-- Primary Meta -->
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={siteName} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    {ogImage && <meta property="og:image:width" content="1200" />}
+    {ogImage && <meta property="og:image:height" content="630" />}
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description} />
+    {ogImage && <meta name="twitter:image" content={ogImage} />}
+
+    <!-- Language alternates (if applicable) -->
+    {lang === 'zh' && <meta name="language" content="Chinese" />}
+    {lang === 'en' && <meta name="language" content="English" />}
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+
+    <!-- Font preloads for above-the-fold performance -->
+    <link
+      rel="preconnect"
+      href="https://fonts.googleapis.com"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin="anonymous"
+    />
+
+    <!-- Slot for additional head content (page-specific) -->
+    <slot name="head" />
+  </head>
+
+  <body class="flex flex-col min-h-dvh bg-warm text-ink antialiased">
+
+    <!-- Skip to main content (accessibility) -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <!-- Sticky site header -->
+    <Header currentPath={currentPath} />
+
+    <!-- Page content -->
+    <main id="main-content" class="flex-1" tabindex="-1">
+      <slot />
+    </main>
+
+    <!-- Footer -->
+    <Footer />
+
+  </body>
+</html>

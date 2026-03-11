@@ -1,0 +1,100 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostCard from '../../components/PostCard.astro';
+import DateSlider from '../../components/DateSlider.astro';
+
+const posts = await getCollection('daily');
+const sortedPosts = posts.sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+
+// Group posts by year-month
+const grouped = new Map<string, typeof sortedPosts>();
+
+for (const post of sortedPosts) {
+  const date = post.data.date;
+  const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+  if (!grouped.has(key)) {
+    grouped.set(key, []);
+  }
+  grouped.get(key)!.push(post);
+}
+
+// Build a sorted array of [key, posts] pairs (newest first)
+const groupedEntries = Array.from(grouped.entries()).sort((a, b) => b[0].localeCompare(a[0]));
+
+function formatMonthLabel(key: string): string {
+  const [year, month] = key.split('-');
+  const date = new Date(Number(year), Number(month) - 1, 1);
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+}
+
+function formatMonthPill(key: string): string {
+  const [year, month] = key.split('-');
+  const date = new Date(Number(year), Number(month) - 1, 1);
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+}
+
+// Build months array for DateSlider
+const months = groupedEntries.map(([key, groupPosts]) => ({
+  label: formatMonthPill(key),
+  value: key,
+  count: groupPosts.length,
+}));
+
+// Default to most recent month
+const currentMonth = groupedEntries[0]?.[0];
+---
+
+<BaseLayout
+  title="Daily — Daily Insights"
+  description="Day-to-day reflections and quick observations."
+>
+  <!-- Page Header -->
+  <div class="border-b border-[#e5e5e5] py-12 md:py-16">
+    <div class="site-container">
+      <p class="mb-3 text-xs font-medium uppercase tracking-widest text-primary-600">
+        Journal
+      </p>
+      <h1 class="font-display text-4xl tracking-tight text-ink md:text-5xl">Daily</h1>
+      <p class="mt-4 max-w-xl text-lg text-ink-light">
+        Day-to-day reflections, observations, and quick notes.
+      </p>
+    </div>
+  </div>
+
+  <!-- Date Navigator -->
+  {sortedPosts.length > 0 && (
+    <DateSlider months={months} currentMonth={currentMonth} />
+  )}
+
+  <!-- Post List -->
+  <div class="site-container py-12 md:py-16">
+    {sortedPosts.length === 0 ? (
+      <div class="rounded-xl border border-dashed border-[#e5e5e5] py-20 text-center">
+        <p class="text-warm-muted">No daily posts yet.</p>
+      </div>
+    ) : (
+      <div class="space-y-14">
+        {groupedEntries.map(([key, groupPosts]) => (
+          <section data-month-section={key}>
+            <h2 class="mb-6 border-b border-[#e5e5e5] pb-3 text-xs font-medium uppercase tracking-widest text-warm-muted">
+              {formatMonthLabel(key)}
+            </h2>
+            <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {groupPosts.map((post) => (
+                <PostCard
+                  title={post.data.title}
+                  date={post.data.date}
+                  summary={post.data.summary}
+                  tags={post.data.tags}
+                  cover={post.data.cover}
+                  href={`/blog/daily/${post.slug}`}
+                />
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    )}
+  </div>
+</BaseLayout>

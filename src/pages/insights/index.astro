@@ -1,0 +1,113 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostCard from '../../components/PostCard.astro';
+
+const allPosts = await getCollection('insights', ({ data }) => !data.draft);
+const sortedPosts = allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+
+const categories = [
+  { key: 'all', label: 'All' },
+  { key: 'skill', label: 'Skill' },
+  { key: 'claude-code', label: 'Claude Code' },
+  { key: 'paper', label: 'Paper' },
+  { key: 'tech', label: 'Tech' },
+  { key: 'thought', label: 'Thought' },
+] as const;
+---
+
+<BaseLayout
+  title="Insights — Daily Insights"
+  description="Skills, tools, techniques, and technical thoughts."
+>
+  <!-- Page Header -->
+  <div class="border-b border-[#e5e5e5] py-12 md:py-16">
+    <div class="site-container">
+      <p class="mb-3 text-xs font-medium uppercase tracking-widest text-primary-600">
+        Articles
+      </p>
+      <h1 class="font-display text-4xl tracking-tight text-ink md:text-5xl">Insights</h1>
+      <p class="mt-4 max-w-xl text-lg text-ink-light">
+        Explorations in skills, tools, AI, and technology.
+      </p>
+    </div>
+  </div>
+
+  <!-- Category Filter -->
+  <div class="sticky top-0 z-10 border-b border-[#e5e5e5] bg-white/95 backdrop-blur-sm">
+    <div class="site-container overflow-x-auto">
+      <div class="flex gap-1 py-3">
+        {categories.map(({ key, label }) => (
+          <button
+            data-category={key}
+            class:list={[
+              'category-btn whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-colors',
+              key === 'all'
+                ? 'bg-ink text-white'
+                : 'text-ink-light hover:bg-[#f5f5f5] hover:text-ink',
+            ]}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  <!-- Post Grid -->
+  <div class="site-container py-12 md:py-16">
+    {sortedPosts.length === 0 ? (
+      <div class="rounded-xl border border-dashed border-[#e5e5e5] py-20 text-center">
+        <p class="text-warm-muted">No insight posts yet.</p>
+      </div>
+    ) : (
+      <div id="posts-grid" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {sortedPosts.map((post) => (
+          <div class="post-item" data-category={post.data.category}>
+            <PostCard
+              title={post.data.title}
+              date={post.data.date}
+              summary={post.data.summary}
+              tags={post.data.tags}
+              category={post.data.category}
+              cover={post.data.cover}
+              href={`/blog/insights/${post.slug}`}
+            />
+          </div>
+        ))}
+      </div>
+    )}
+    <p id="no-results" class="hidden py-20 text-center text-warm-muted">
+      No posts in this category yet.
+    </p>
+  </div>
+</BaseLayout>
+
+<script>
+  const buttons = document.querySelectorAll<HTMLButtonElement>('.category-btn');
+  const items = document.querySelectorAll<HTMLElement>('.post-item');
+  const noResults = document.getElementById('no-results')!;
+
+  function filterPosts(category: string) {
+    let visible = 0;
+    items.forEach((item) => {
+      const match = category === 'all' || item.dataset.category === category;
+      item.style.display = match ? '' : 'none';
+      if (match) visible++;
+    });
+    noResults.classList.toggle('hidden', visible > 0);
+
+    buttons.forEach((btn) => {
+      const isActive = btn.dataset.category === category;
+      btn.classList.toggle('bg-ink', isActive);
+      btn.classList.toggle('text-white', isActive);
+      btn.classList.toggle('text-ink-light', !isActive);
+    });
+  }
+
+  buttons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      filterPosts(btn.dataset.category ?? 'all');
+    });
+  });
+</script>

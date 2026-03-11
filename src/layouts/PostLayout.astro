@@ -1,0 +1,230 @@
+---
+/**
+ * PostLayout.astro
+ * Layout for individual blog posts (daily / insights / papers).
+ * Anthropic Engineering Blog style: hero image → title → date → clean prose.
+ */
+
+import BaseLayout from './BaseLayout.astro';
+
+export interface Props {
+  title: string;
+  date: Date;
+  cover?: string;
+  coverAlt?: string;
+  tags?: string[];
+  category?: 'skill' | 'claude-code' | 'paper' | 'thought' | 'tech' | 'daily';
+  lang?: 'zh' | 'en';
+  summary?: string;
+  authors?: string[];
+  venue?: string;
+  backHref?: string;
+  backLabel?: string;
+  prev?: { href: string; title: string };
+  next?: { href: string; title: string };
+}
+
+const {
+  title,
+  date,
+  cover,
+  coverAlt = '',
+  tags = [],
+  category,
+  lang = 'zh',
+  summary,
+  authors = [],
+  venue,
+  backHref,
+  backLabel = 'Back',
+  prev,
+  next,
+} = Astro.props;
+
+const formattedDate = new Intl.DateTimeFormat(lang === 'zh' ? 'zh-CN' : 'en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+}).format(date);
+
+const isoDate = date.toISOString().split('T')[0];
+
+const categoryLabels: Record<string, string> = {
+  skill:        'Skill',
+  'claude-code':'Claude Code',
+  paper:        'Paper',
+  thought:      'Thought',
+  tech:         'Tech',
+  daily:        'Daily',
+};
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const resolvedBackHref = backHref ?? `${base}/`;
+---
+
+<BaseLayout title={title} description={summary} image={cover} lang={lang}>
+
+  <!-- Full-width cover image (optional) -->
+  {cover && (
+    <div class="w-full overflow-hidden bg-[#141413]" style="max-height: 520px;">
+      <img
+        src={cover}
+        alt={coverAlt}
+        class="w-full object-cover"
+        style="max-height: 520px; object-position: center;"
+        width="1200"
+        height="520"
+        loading="eager"
+        decoding="async"
+      />
+    </div>
+  )}
+
+  <!-- Article -->
+  <article class="section-gap">
+    <div class="post-container">
+
+      <!-- Back link -->
+      <nav aria-label="Breadcrumb" class="mb-10">
+        <a
+          href={resolvedBackHref}
+          class="inline-flex items-center gap-1.5 text-sm text-warm-muted hover:text-ink transition-colors duration-150 group"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="14" height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="transition-transform duration-150 group-hover:-translate-x-0.5"
+            aria-hidden="true"
+          >
+            <path d="M19 12H5M12 5l-7 7 7 7"/>
+          </svg>
+          {backLabel}
+        </a>
+      </nav>
+
+      <!-- Post header -->
+      <header class="mb-10">
+
+        <!-- Category label -->
+        {category && (
+          <div class="mb-4">
+            <span class:list={['category-badge', `category-badge--${category}`]}>
+              {categoryLabels[category] ?? category}
+            </span>
+          </div>
+        )}
+
+        <!-- Title -->
+        <h1 class="font-display text-3xl sm:text-4xl md:text-[2.75rem] leading-tight text-ink mb-5">
+          {title}
+        </h1>
+
+        <!-- Summary -->
+        {summary && (
+          <p class="text-lg text-ink-light leading-relaxed mb-6">
+            {summary}
+          </p>
+        )}
+
+        <!-- Authors (papers) -->
+        {authors.length > 0 && (
+          <p class="text-sm text-warm-muted mb-2">
+            {authors.join(', ')}
+          </p>
+        )}
+
+        <!-- Venue (papers) -->
+        {venue && (
+          <p class="text-sm text-warm-muted italic mb-4">{venue}</p>
+        )}
+
+        <!-- Date + Tags -->
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <time datetime={isoDate} class="text-sm text-warm-muted tabular-nums">
+            {formattedDate}
+          </time>
+          {tags.length > 0 && (
+            <div class="flex flex-wrap gap-2" aria-label="Tags">
+              {tags.map((tag) => (
+                <span class="tag-badge">#{tag}</span>
+              ))}
+            </div>
+          )}
+        </div>
+      </header>
+
+      <!-- Divider -->
+      <hr class="border-t border-[#e5e5e5] mb-10" />
+
+      <!-- Post body -->
+      <div class="prose prose-base max-w-none">
+        <slot />
+      </div>
+
+      <!-- Bottom tags -->
+      {tags.length > 0 && (
+        <div class="mt-12 pt-8 border-t border-[#e5e5e5]">
+          <p class="section-label mb-3">Tags</p>
+          <div class="flex flex-wrap gap-2" aria-label="Post tags">
+            {tags.map((tag) => (
+              <span class="tag-badge">#{tag}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+    </div>
+  </article>
+
+  <!-- Prev / Next navigation -->
+  {(prev || next) && (
+    <nav aria-label="Post navigation" class="border-t border-[#e5e5e5]">
+      <div class="site-container py-10">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+          {prev ? (
+            <a
+              href={prev.href}
+              class="group flex flex-col gap-1 p-5 rounded-lg border border-[#e5e5e5] hover:border-[#d4d4d4] hover:bg-[#fafafa] transition-all duration-200"
+            >
+              <span class="section-label flex items-center gap-1.5">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+                Previous
+              </span>
+              <span class="text-sm font-medium text-ink group-hover:text-primary-700 transition-colors duration-150 line-clamp-2">
+                {prev.title}
+              </span>
+            </a>
+          ) : (
+            <div />
+          )}
+
+          {next ? (
+            <a
+              href={next.href}
+              class="group flex flex-col gap-1 p-5 rounded-lg border border-[#e5e5e5] hover:border-[#d4d4d4] hover:bg-[#fafafa] transition-all duration-200 sm:text-right sm:items-end"
+            >
+              <span class="section-label flex items-center gap-1.5 sm:flex-row-reverse">
+                Next
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </span>
+              <span class="text-sm font-medium text-ink group-hover:text-primary-700 transition-colors duration-150 line-clamp-2">
+                {next.title}
+              </span>
+            </a>
+          ) : (
+            <div />
+          )}
+
+        </div>
+      </div>
+    </nav>
+  )}
+
+</BaseLayout>

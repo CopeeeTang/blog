@@ -1,0 +1,159 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg-dark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a1a;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#221e1b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1a1714;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="node-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#a88264;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7a5840;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="glow-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#a88264;stop-opacity:0.4" />
+      <stop offset="100%" style="stop-color:#a88264;stop-opacity:0" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="soft-glow">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Dark background -->
+  <rect width="1200" height="630" fill="url(#bg-dark)" />
+
+  <!-- Grid base - fine lines -->
+  <g stroke="#a88264" stroke-width="0.3" opacity="0.12">
+    <!-- Vertical lines every 60px -->
+    <line x1="60" y1="0" x2="60" y2="630"/>
+    <line x1="120" y1="0" x2="120" y2="630"/>
+    <line x1="180" y1="0" x2="180" y2="630"/>
+    <line x1="240" y1="0" x2="240" y2="630"/>
+    <line x1="300" y1="0" x2="300" y2="630"/>
+    <line x1="360" y1="0" x2="360" y2="630"/>
+    <line x1="420" y1="0" x2="420" y2="630"/>
+    <line x1="480" y1="0" x2="480" y2="630"/>
+    <line x1="540" y1="0" x2="540" y2="630"/>
+    <line x1="600" y1="0" x2="600" y2="630"/>
+    <line x1="660" y1="0" x2="660" y2="630"/>
+    <line x1="720" y1="0" x2="720" y2="630"/>
+    <line x1="780" y1="0" x2="780" y2="630"/>
+    <line x1="840" y1="0" x2="840" y2="630"/>
+    <line x1="900" y1="0" x2="900" y2="630"/>
+    <line x1="960" y1="0" x2="960" y2="630"/>
+    <line x1="1020" y1="0" x2="1020" y2="630"/>
+    <line x1="1080" y1="0" x2="1080" y2="630"/>
+    <line x1="1140" y1="0" x2="1140" y2="630"/>
+    <!-- Horizontal lines every 60px -->
+    <line x1="0" y1="60" x2="1200" y2="60"/>
+    <line x1="0" y1="120" x2="1200" y2="120"/>
+    <line x1="0" y1="180" x2="1200" y2="180"/>
+    <line x1="0" y1="240" x2="1200" y2="240"/>
+    <line x1="0" y1="300" x2="1200" y2="300"/>
+    <line x1="0" y1="360" x2="1200" y2="360"/>
+    <line x1="0" y1="420" x2="1200" y2="420"/>
+    <line x1="0" y1="480" x2="1200" y2="480"/>
+    <line x1="0" y1="540" x2="1200" y2="540"/>
+    <line x1="0" y1="600" x2="1200" y2="600"/>
+  </g>
+
+  <!-- Circuit trace paths - horizontal runs -->
+  <g stroke="#a88264" stroke-width="1.5" fill="none" opacity="0.45">
+    <path d="M60,180 L240,180 L240,240 L420,240 L420,180 L600,180"/>
+    <path d="M600,180 L780,180 L780,120 L960,120 L960,180 L1140,180"/>
+    <path d="M120,360 L300,360 L300,300 L480,300 L480,360 L660,360"/>
+    <path d="M660,360 L840,360 L840,420 L1020,420 L1020,360 L1140,360"/>
+    <path d="M0,480 L180,480 L180,540 L360,540 L360,480 L600,480"/>
+    <path d="M600,480 L840,480 L840,540 L1020,540"/>
+  </g>
+
+  <!-- Brighter accent traces -->
+  <g stroke="#c4a484" stroke-width="2" fill="none" opacity="0.55">
+    <path d="M300,60 L300,180"/>
+    <path d="M600,120 L600,300"/>
+    <path d="M900,60 L900,180"/>
+    <path d="M480,300 L480,480"/>
+    <path d="M840,360 L840,480"/>
+    <path d="M660,360 L660,480"/>
+  </g>
+
+  <!-- Circuit nodes - intersection dots -->
+  <g filter="url(#glow)">
+    <circle cx="240" cy="240" r="5" fill="#a88264" opacity="0.9"/>
+    <circle cx="420" cy="240" r="5" fill="#a88264" opacity="0.9"/>
+    <circle cx="420" cy="180" r="5" fill="#c4a484" opacity="0.95"/>
+    <circle cx="600" cy="180" r="7" fill="#a88264" opacity="1"/>
+    <circle cx="780" cy="180" r="5" fill="#a88264" opacity="0.9"/>
+    <circle cx="780" cy="120" r="5" fill="#c4a484" opacity="0.9"/>
+    <circle cx="960" cy="120" r="5" fill="#a88264" opacity="0.9"/>
+    <circle cx="300" cy="300" r="5" fill="#a88264" opacity="0.9"/>
+    <circle cx="480" cy="300" r="7" fill="#c4a484" opacity="1"/>
+    <circle cx="480" cy="360" r="5" fill="#a88264" opacity="0.9"/>
+    <circle cx="660" cy="360" r="5" fill="#a88264" opacity="0.9"/>
+    <circle cx="840" cy="360" r="7" fill="#c4a484" opacity="1"/>
+    <circle cx="840" cy="420" r="5" fill="#a88264" opacity="0.9"/>
+    <circle cx="1020" cy="420" r="5" fill="#a88264" opacity="0.9"/>
+    <circle cx="360" cy="480" r="5" fill="#a88264" opacity="0.9"/>
+    <circle cx="600" cy="480" r="7" fill="#c4a484" opacity="1"/>
+    <circle cx="840" cy="480" r="5" fill="#a88264" opacity="0.9"/>
+    <circle cx="840" cy="540" r="5" fill="#a88264" opacity="0.9"/>
+  </g>
+
+  <!-- Central glow burst -->
+  <circle cx="600" cy="315" r="200" fill="url(#glow-grad)" opacity="0.25"/>
+  <circle cx="600" cy="315" r="80" fill="#a88264" opacity="0.06"/>
+
+  <!-- Chips / IC blocks -->
+  <g opacity="0.5">
+    <rect x="210" y="155" width="60" height="50" rx="3" fill="none" stroke="#a88264" stroke-width="1.2"/>
+    <line x1="220" y1="165" x2="260" y2="165" stroke="#a88264" stroke-width="0.7" opacity="0.5"/>
+    <line x1="220" y1="175" x2="260" y2="175" stroke="#a88264" stroke-width="0.7" opacity="0.5"/>
+    <line x1="220" y1="185" x2="250" y2="185" stroke="#a88264" stroke-width="0.7" opacity="0.5"/>
+
+    <rect x="750" y="95" width="60" height="50" rx="3" fill="none" stroke="#a88264" stroke-width="1.2"/>
+    <line x1="760" y1="105" x2="800" y2="105" stroke="#a88264" stroke-width="0.7" opacity="0.5"/>
+    <line x1="760" y1="115" x2="800" y2="115" stroke="#a88264" stroke-width="0.7" opacity="0.5"/>
+    <line x1="760" y1="125" x2="790" y2="125" stroke="#a88264" stroke-width="0.7" opacity="0.5"/>
+
+    <rect x="450" y="275" width="60" height="50" rx="3" fill="none" stroke="#c4a484" stroke-width="1.5"/>
+    <line x1="460" y1="285" x2="500" y2="285" stroke="#c4a484" stroke-width="0.8" opacity="0.6"/>
+    <line x1="460" y1="295" x2="500" y2="295" stroke="#c4a484" stroke-width="0.8" opacity="0.6"/>
+    <line x1="460" y1="305" x2="490" y2="305" stroke="#c4a484" stroke-width="0.8" opacity="0.6"/>
+
+    <rect x="810" y="335" width="60" height="50" rx="3" fill="none" stroke="#c4a484" stroke-width="1.5"/>
+    <line x1="820" y1="345" x2="860" y2="345" stroke="#c4a484" stroke-width="0.8" opacity="0.6"/>
+    <line x1="820" y1="355" x2="860" y2="355" stroke="#c4a484" stroke-width="0.8" opacity="0.6"/>
+    <line x1="820" y1="365" x2="850" y2="365" stroke="#c4a484" stroke-width="0.8" opacity="0.6"/>
+  </g>
+
+  <!-- Small pulsing dot accents -->
+  <circle cx="600" cy="315" r="12" fill="#a88264" opacity="0.3" filter="url(#soft-glow)"/>
+  <circle cx="600" cy="315" r="5" fill="#d4b496" opacity="0.8"/>
+
+  <!-- Corner bracket accents -->
+  <g stroke="#a88264" stroke-width="1.5" fill="none" opacity="0.3">
+    <path d="M20,20 L20,60 L60,60"/>
+    <path d="M1180,20 L1180,60 L1140,60"/>
+    <path d="M20,610 L20,570 L60,570"/>
+    <path d="M1180,610 L1180,570 L1140,570"/>
+  </g>
+
+  <!-- Top text-like scan line decoration -->
+  <g opacity="0.15">
+    <rect x="80" y="30" width="120" height="6" rx="3" fill="#a88264"/>
+    <rect x="220" y="30" width="60" height="6" rx="3" fill="#a88264"/>
+    <rect x="300" y="30" width="90" height="6" rx="3" fill="#a88264"/>
+    <rect x="900" y="30" width="80" height="6" rx="3" fill="#a88264"/>
+    <rect x="1000" y="30" width="110" height="6" rx="3" fill="#a88264"/>
+  </g>
+</svg>

@@ -1,0 +1,158 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+// Fetch all collections, filter out drafts from insights/papers
+const dailyPosts = await getCollection('daily');
+const insightPosts = await getCollection('insights', ({ data }) => !data.draft);
+const paperPosts = await getCollection('papers', ({ data }) => !data.draft);
+
+type ArchivePost = {
+  slug: string;
+  collection: 'daily' | 'insights' | 'papers';
+  title: string;
+  date: Date;
+};
+
+const allPosts: ArchivePost[] = [
+  ...dailyPosts.map((p) => ({
+    slug: p.slug,
+    collection: 'daily' as const,
+    title: p.data.title,
+    date: p.data.date,
+  })),
+  ...insightPosts.map((p) => ({
+    slug: p.slug,
+    collection: 'insights' as const,
+    title: p.data.title,
+    date: p.data.date,
+  })),
+  ...paperPosts.map((p) => ({
+    slug: p.slug,
+    collection: 'papers' as const,
+    title: p.data.title,
+    date: p.data.date,
+  })),
+].sort((a, b) => b.date.getTime() - a.date.getTime());
+
+// Group by year, then month
+const byYear = new Map<number, Map<number, ArchivePost[]>>();
+
+for (const post of allPosts) {
+  const year = post.date.getFullYear();
+  const month = post.date.getMonth(); // 0-based
+
+  if (!byYear.has(year)) {
+    byYear.set(year, new Map());
+  }
+  const byMonth = byYear.get(year)!;
+  if (!byMonth.has(month)) {
+    byMonth.set(month, []);
+  }
+  byMonth.get(month)!.push(post);
+}
+
+// Sort years descending
+const sortedYears = Array.from(byYear.entries()).sort((a, b) => b[0] - a[0]);
+
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+const COLLECTION_LABELS: Record<string, string> = {
+  daily:    'Daily',
+  insights: 'Insight',
+  papers:   'Paper',
+};
+
+const COLLECTION_COLORS: Record<string, string> = {
+  daily:    'bg-[#f0f9ff] text-[#0369a1]',
+  insights: 'bg-[#fff7ed] text-[#ea580c]',
+  papers:   'bg-[#f5f3ff] text-[#7c3aed]',
+};
+
+function postHref(post: ArchivePost): string {
+  return `/blog/${post.collection}/${post.slug}`;
+}
+---
+
+<BaseLayout
+  title="Archive — Daily Insights"
+  description="All posts, grouped by year and month."
+>
+  <!-- Page Header -->
+  <div class="border-b border-[#e5e5e5] py-12 md:py-16">
+    <div class="mx-auto max-w-3xl px-5 sm:px-8">
+      <p class="mb-3 text-xs font-medium uppercase tracking-widest text-primary-600">
+        Archive
+      </p>
+      <h1 class="font-display text-4xl tracking-tight text-ink md:text-5xl">All Posts</h1>
+      <p class="mt-4 text-lg text-ink-light">
+        {allPosts.length} post{allPosts.length !== 1 ? 's' : ''} across all sections.
+      </p>
+    </div>
+  </div>
+
+  <!-- Archive List -->
+  <div class="mx-auto max-w-3xl px-5 sm:px-8 py-12 md:py-16">
+    {allPosts.length === 0 ? (
+      <div class="rounded-xl border border-dashed border-[#e5e5e5] py-20 text-center">
+        <p class="text-warm-muted">No posts yet.</p>
+      </div>
+    ) : (
+      <div class="space-y-14">
+        {sortedYears.map(([year, monthMap]) => {
+          const sortedMonths = Array.from(monthMap.entries()).sort((a, b) => b[0] - a[0]);
+          return (
+            <section>
+              <h2 class="font-display mb-6 text-2xl text-ink">{year}</h2>
+
+              <div class="space-y-8">
+                {sortedMonths.map(([month, posts]) => (
+                  <div>
+                    <h3 class="mb-3 text-xs font-medium uppercase tracking-widest text-warm-muted">
+                      {MONTH_NAMES[month]}
+                    </h3>
+
+                    <ul class="space-y-1 border-l-2 border-[#f0f0f0] pl-4">
+                      {posts.map((post) => (
+                        <li class="flex items-baseline gap-3 py-1">
+                          <time
+                            datetime={post.date.toISOString()}
+                            class="w-[4.5rem] shrink-0 text-xs tabular-nums text-warm-muted"
+                          >
+                            {post.date.toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                            })}
+                          </time>
+
+                          <span
+                            class:list={[
+                              'shrink-0 rounded px-1.5 py-0.5 text-xs font-medium',
+                              COLLECTION_COLORS[post.collection],
+                            ]}
+                          >
+                            {COLLECTION_LABELS[post.collection]}
+                          </span>
+
+                          <a
+                            href={postHref(post)}
+                            class="text-sm text-ink-light transition-colors hover:text-ink hover:underline"
+                          >
+                            {post.title}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </section>
+          );
+        })}
+      </div>
+    )}
+  </div>
+</BaseLayout>

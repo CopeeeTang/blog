@@ -1,0 +1,163 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PostCard from '../components/PostCard.astro';
+
+// Fetch all collections, filter out drafts from insights and papers
+const dailyPosts = await getCollection('daily');
+const insightPosts = await getCollection('insights', ({ data }) => !data.draft);
+const paperPosts = await getCollection('papers', ({ data }) => !data.draft);
+
+// Combine all posts with collection info, sort by date descending
+type PostItem = {
+  slug: string;
+  collection: string;
+  data: {
+    title: string;
+    date: Date;
+    summary?: string;
+    tags?: string[];
+    category?: string;
+    cover?: string;
+  };
+};
+
+const allPosts: PostItem[] = [
+  ...dailyPosts.map((p) => ({ ...p, collection: 'daily' as const })),
+  ...insightPosts.map((p) => ({ ...p, collection: 'insights' as const })),
+  ...paperPosts.map((p) => ({ ...p, collection: 'papers' as const })),
+].sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+
+const [featuredPost, ...remainingPosts] = allPosts;
+const gridPosts = remainingPosts.slice(0, 5);
+---
+
+<BaseLayout
+  title="Daily Insights"
+  description="Personal reflections, technical insights, and paper reviews by Tangxin."
+>
+  <!-- Hero / Intro -->
+  <section class="border-b border-[#e5e5e5] py-16 md:py-24">
+    <div class="site-container">
+      <p class="mb-4 text-xs font-medium uppercase tracking-widest text-primary-600">
+        Personal Blog
+      </p>
+      <h1 class="font-display text-5xl leading-tight tracking-tight text-ink md:text-6xl">
+        Daily Insights
+      </h1>
+      <p class="mt-5 max-w-xl text-lg text-ink-light leading-relaxed">
+        Reflections on AI research, engineering craft, and ideas worth thinking through.
+      </p>
+      <div class="mt-8 flex flex-wrap gap-3">
+        <a
+          href="/blog/daily"
+          class="inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-ink-light"
+        >
+          Daily Notes
+        </a>
+        <a
+          href="/blog/insights"
+          class="inline-flex items-center gap-2 rounded-full border border-[#e5e5e5] px-5 py-2.5 text-sm font-medium text-ink-light transition-colors hover:border-[#d4d4d4] hover:text-ink"
+        >
+          Insights
+        </a>
+        <a
+          href="/blog/papers"
+          class="inline-flex items-center gap-2 rounded-full border border-[#e5e5e5] px-5 py-2.5 text-sm font-medium text-ink-light transition-colors hover:border-[#d4d4d4] hover:text-ink"
+        >
+          Papers
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Latest Posts -->
+  <section class="section-gap">
+    <div class="site-container">
+
+      {allPosts.length === 0 ? (
+        <div class="rounded-xl border border-dashed border-[#e5e5e5] py-20 text-center">
+          <p class="text-warm-muted">No posts yet. Start writing!</p>
+        </div>
+      ) : (
+        <>
+          {/* Section header */}
+          <div class="mb-8 flex items-baseline justify-between">
+            <h2 class="font-display text-2xl text-ink">Latest</h2>
+            <a
+              href="/blog/archive"
+              class="text-sm text-warm-muted transition-colors hover:text-ink"
+            >
+              All posts &rarr;
+            </a>
+          </div>
+
+          {/* Featured post — large prominent card */}
+          {featuredPost && (
+            <div class="mb-8">
+              <PostCard
+                title={featuredPost.data.title}
+                date={featuredPost.data.date}
+                summary={featuredPost.data.summary}
+                tags={featuredPost.data.tags}
+                category={'category' in featuredPost.data ? (featuredPost.data.category as any) : undefined}
+                cover={featuredPost.data.cover}
+                href={`/blog/${featuredPost.collection}/${featuredPost.slug}`}
+                featured={true}
+              />
+            </div>
+          )}
+
+          {/* Grid of remaining recent posts */}
+          {gridPosts.length > 0 && (
+            <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {gridPosts.map((post) => (
+                <PostCard
+                  title={post.data.title}
+                  date={post.data.date}
+                  summary={post.data.summary}
+                  tags={post.data.tags}
+                  category={'category' in post.data ? (post.data.category as any) : undefined}
+                  cover={post.data.cover}
+                  href={`/blog/${post.collection}/${post.slug}`}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  </section>
+
+  <!-- Section navigation -->
+  <section class="border-t border-[#e5e5e5] py-16">
+    <div class="site-container">
+      <div class="grid gap-px bg-[#e5e5e5] sm:grid-cols-3 rounded-xl overflow-hidden">
+        <a
+          href="/blog/daily"
+          class="group bg-white p-7 transition-colors hover:bg-[#fafafa]"
+        >
+          <p class="text-2xl mb-3">📅</p>
+          <h3 class="font-display text-lg text-ink group-hover:text-primary-700 transition-colors">Daily</h3>
+          <p class="mt-1 text-sm text-warm-muted">Day-to-day reflections and quick observations</p>
+        </a>
+        <a
+          href="/blog/insights"
+          class="group bg-white p-7 transition-colors hover:bg-[#fafafa]"
+        >
+          <p class="text-2xl mb-3">💡</p>
+          <h3 class="font-display text-lg text-ink group-hover:text-primary-700 transition-colors">Insights</h3>
+          <p class="mt-1 text-sm text-warm-muted">Skills, tools, techniques, and technical thoughts</p>
+        </a>
+        <a
+          href="/blog/papers"
+          class="group bg-white p-7 transition-colors hover:bg-[#fafafa]"
+        >
+          <p class="text-2xl mb-3">📄</p>
+          <h3 class="font-display text-lg text-ink group-hover:text-primary-700 transition-colors">Papers</h3>
+          <p class="mt-1 text-sm text-warm-muted">Notes and reviews on research papers</p>
+        </a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
