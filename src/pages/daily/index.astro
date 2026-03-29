@@ -1,100 +1,754 @@
 ---
+/**
+ * Daily Calendar Page
+ * Warm bento-style calendar view for daily diary entries.
+ * Reads from Content Collections and renders an interactive calendar
+ * with sidebar detail panel.
+ */
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import PostCard from '../../components/PostCard.astro';
-import DateSlider from '../../components/DateSlider.astro';
 
 const posts = await getCollection('daily');
-const sortedPosts = posts.sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
 
-// Group posts by year-month
-const grouped = new Map<string, typeof sortedPosts>();
+/* ── Category helpers ── */
+const CAT_LABELS: Record<string, string> = { cc: 'Claude Code', res: '科研', blg: 'Blog' };
+const WEEKDAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const WDAY_SHORTS = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
 
-for (const post of sortedPosts) {
-  const date = post.data.date;
-  const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-  if (!grouped.has(key)) {
-    grouped.set(key, []);
+function headerToType(header: string): string | null {
+  const h = header.toLowerCase();
+  if (h.includes('claude code') || h === 'cc') return 'cc';
+  if (h.includes('科研') || h.includes('research') || h.includes('实验')) return 'res';
+  if (h.includes('blog') || h.includes('博客') || h.includes('阅读')) return 'blg';
+  return null;
+}
+
+function tagsToCategories(tags: string[]): string[] {
+  const cats: string[] = [];
+  const t = tags.map(x => x.toLowerCase());
+  if (t.some(x => x === 'claude-code' || x === 'cc' || x === 'astro')) cats.push('cc');
+  if (t.some(x => x === '科研' || x === 'research')) cats.push('res');
+  if (t.some(x => x === 'blog' || x === '博客')) cats.push('blg');
+  return cats;
+}
+
+/* ── Parse each entry ── */
+interface TaskItem { id: string; done: boolean; text: string }
+interface Section { type: string; label: string; tasks: TaskItem[] }
+interface EntryData {
+  title: string; summary: string; dateStr: string; day: number;
+  monthKey: string; weekday: string; wdayShort: string;
+  tags: string[]; cats: string[]; slug: string;
+  sections: Section[]; hasTasks: boolean;
+}
+
+function parseEntry(post: any): EntryData {
+  const { title, date, summary = '', tags = [] } = post.data;
+  const body: string = post.body || '';
+  const slug = post.slug ?? post.id?.replace(/\.md$/, '') ?? '';
+
+  const d = new Date(date);
+  const day = d.getUTCDate();
+  const monthKey = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+  const dateStr = `${monthKey}-${String(day).padStart(2, '0')}`;
+
+  const cats = tagsToCategories(tags);
+
+  // Parse sections and tasks from markdown
+  const sections: Section[] = [];
+  const lines = body.split('\n');
+  let currentSection: Section | null = null;
+  let taskCounter = 0;
+
+  for (const line of lines) {
+    const hm = line.match(/^##\s+(.+)/);
+    if (hm) {
+      const type = headerToType(hm[1]);
+      if (type) {
+        currentSection = { type, label: CAT_LABELS[type]!, tasks: [] };
+        sections.push(currentSection);
+      } else { currentSection = null; }
+      continue;
+    }
+    const tm = line.match(/^[-*]\s+\[([ xX])\]\s+(.+)/);
+    if (tm && currentSection) {
+      taskCounter++;
+      currentSection.tasks.push({
+        id: `${dateStr}-${taskCounter}`,
+        done: tm[1].toLowerCase() === 'x',
+        text: tm[2].trim(),
+      });
+    }
   }
-  grouped.get(key)!.push(post);
+
+  let filteredSections = sections.filter(s => s.tasks.length > 0);
+
+  // Fallback: collect orphan tasks if no category sections matched
+  if (filteredSections.length === 0) {
+    const allTasks: TaskItem[] = [];
+    let cnt = taskCounter;
+    for (const line of lines) {
+      const tm = line.match(/^[-*]\s+\[([ xX])\]\s+(.+)/);
+      if (tm) {
+        cnt++;
+        allTasks.push({ id: `${dateStr}-${cnt}`, done: tm[1].toLowerCase() === 'x', text: tm[2].trim() });
+      }
+    }
+    if (allTasks.length > 0) {
+      const dt = cats[0] || 'cc';
+      filteredSections = [{ type: dt, label: CAT_LABELS[dt] || 'Tasks', tasks: allTasks }];
+    }
+  }
+
+  // Smart title: if generic "每日复盘", auto-generate from sections
+  let displayTitle = title.replace(/^\d{4}-\d{2}-\d{2}\s*/, '').trim();
+  if (['每日复盘', '复盘', 'daily', ''].includes(displayTitle.replace(/\s*\(.*\)/, '').toLowerCase())) {
+    displayTitle = filteredSections.length > 0
+      ? filteredSections.map(s => s.label).join(' + ')
+      : cats.map(c => CAT_LABELS[c] || c).join(' + ') || '每日复盘';
+    // Preserve parenthetical notes like (17~18)
+    const paren = title.match(/\(.+\)/);
+    if (paren) displayTitle += ' ' + paren[0];
+  }
+
+  return {
+    title: displayTitle, summary, dateStr, day, monthKey,
+    weekday: WEEKDAYS[d.getUTCDay()]!, wdayShort: WDAY_SHORTS[d.getUTCDay()]!,
+    tags, cats: cats.length > 0 ? cats : ['cc'], slug,
+    sections: filteredSections,
+    hasTasks: filteredSections.some(s => s.tasks.length > 0),
+  };
 }
 
-// Build a sorted array of [key, posts] pairs (newest first)
-const groupedEntries = Array.from(grouped.entries()).sort((a, b) => b[0].localeCompare(a[0]));
+const entries: Record<string, EntryData> = {};
+const monthSet = new Set<string>();
 
-function formatMonthLabel(key: string): string {
-  const [year, month] = key.split('-');
-  const date = new Date(Number(year), Number(month) - 1, 1);
-  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+for (const post of posts) {
+  const parsed = parseEntry(post);
+  entries[parsed.dateStr] = parsed;
+  monthSet.add(parsed.monthKey);
 }
 
-function formatMonthPill(key: string): string {
-  const [year, month] = key.split('-');
-  const date = new Date(Number(year), Number(month) - 1, 1);
-  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
-}
-
-// Build months array for DateSlider
-const months = groupedEntries.map(([key, groupPosts]) => ({
-  label: formatMonthPill(key),
-  value: key,
-  count: groupPosts.length,
-}));
-
-// Default to most recent month
-const currentMonth = groupedEntries[0]?.[0];
+const months = Array.from(monthSet).sort();
+const totalEntries = Object.keys(entries).length;
+const entriesJson = JSON.stringify({ entries, months });
 ---
 
-<BaseLayout
-  title="Daily — Daily Insights"
-  description="Day-to-day reflections and quick observations."
->
-  <!-- Page Header -->
-  <div class="border-b border-[#e5e5e5] py-12 md:py-16">
-    <div class="site-container">
-      <p class="mb-3 text-xs font-medium uppercase tracking-widest text-primary-600">
-        Journal
-      </p>
-      <h1 class="font-display text-4xl tracking-tight text-ink md:text-5xl">Daily</h1>
-      <p class="mt-4 max-w-xl text-lg text-ink-light">
-        Day-to-day reflections, observations, and quick notes.
-      </p>
+<BaseLayout title="Daily — Calendar" description="日记式的每日记录，以日历视图呈现。">
+  <Fragment slot="head">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  </Fragment>
+
+  <div class="dc-page">
+    <div class="dc-inner">
+
+      {/* ── Header ── */}
+      <div class="dc-header">
+        <div>
+          <p class="dc-eyebrow">my journal</p>
+          <h1 class="dc-h-title">Daily <em>Notes</em></h1>
+        </div>
+        <div class="dc-h-right">
+          <div class="dc-badge"><span class="dc-badge-dot"></span><span id="dc-month-badge"></span></div>
+          <div class="dc-h-count" id="dc-entry-count"></div>
+          <div class="dc-h-count-sub">entries this month</div>
+        </div>
+      </div>
+
+      <div class="dc-rule"></div>
+
+      {/* ── Month nav ── */}
+      <div class="dc-month-nav">
+        <span class="dc-month-label" id="dc-month-label"></span>
+        <div style="display:flex;gap:12px;align-items:center">
+          <div class="dc-legend">
+            <span class="dc-leg-item"><span class="dc-leg-dot" style="background:var(--dc-acc)"></span>Claude Code</span>
+            <span class="dc-leg-item"><span class="dc-leg-dot" style="background:var(--dc-res)"></span>科研</span>
+            <span class="dc-leg-item"><span class="dc-leg-dot" style="background:var(--dc-blg)"></span>Blog</span>
+          </div>
+          <div class="dc-nav-btns">
+            <button class="dc-nav-btn" id="dc-prev" aria-label="Previous month">&lsaquo;</button>
+            <button class="dc-nav-btn" id="dc-next" aria-label="Next month">&rsaquo;</button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Bento: Calendar + Sidebar ── */}
+      <div class="dc-bento">
+
+        {/* Calendar tile */}
+        <div class="dc-cal-tile">
+          <div class="dc-cal-dow">
+            <div class="dc-cal-dh">Sun</div><div class="dc-cal-dh">Mon</div>
+            <div class="dc-cal-dh">Tue</div><div class="dc-cal-dh">Wed</div>
+            <div class="dc-cal-dh">Thu</div><div class="dc-cal-dh">Fri</div>
+            <div class="dc-cal-dh">Sat</div>
+          </div>
+          <div class="dc-cal-grid" id="dc-cal-grid"></div>
+        </div>
+
+        {/* Sidebar */}
+        <div class="dc-sidebar" id="dc-sidebar">
+          {/* Default view */}
+          <div class="dc-sb-default">
+            <div class="dc-stat-card">
+              <div class="dc-sc-label" id="dc-stat-label">Activity</div>
+              <div class="dc-sc-val" id="dc-stat-val">{totalEntries}</div>
+              <div class="dc-sc-sub">entries logged</div>
+              <div class="dc-streak-row" id="dc-streak"></div>
+            </div>
+            <div class="dc-mini-list">
+              <div class="dc-ml-head">This Month</div>
+              <div id="dc-mini-entries"></div>
+            </div>
+          </div>
+          {/* Detail view */}
+          <div class="dc-sb-detail" id="dc-sb-detail">
+            <div class="dc-detail-card">
+              <div class="dc-det-head">
+                <div class="dc-det-top">
+                  <div>
+                    <div class="dc-det-day" id="dc-d-day"></div>
+                    <div class="dc-det-datelabel" id="dc-d-datelabel"></div>
+                  </div>
+                  <button class="dc-det-close" id="dc-close-btn" aria-label="Close detail panel">&times;</button>
+                </div>
+                <div class="dc-det-title" id="dc-d-title"></div>
+                <div class="dc-det-tags" id="dc-d-tags"></div>
+              </div>
+              <div class="dc-det-progress" id="dc-det-progress">
+                <div class="dc-prog-row">
+                  <span class="dc-prog-label">Progress</span>
+                  <span class="dc-prog-pct" id="dc-prog-pct">0%</span>
+                </div>
+                <div class="dc-prog-bar"><div class="dc-prog-fill" id="dc-prog-fill" style="width:0%"></div></div>
+              </div>
+              <div class="dc-det-body" id="dc-det-body"></div>
+              <div class="dc-det-footer" id="dc-det-footer"></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Date Navigator -->
-  {sortedPosts.length > 0 && (
-    <DateSlider months={months} currentMonth={currentMonth} />
-  )}
-
-  <!-- Post List -->
-  <div class="site-container py-12 md:py-16">
-    {sortedPosts.length === 0 ? (
-      <div class="rounded-xl border border-dashed border-[#e5e5e5] py-20 text-center">
-        <p class="text-warm-muted">No daily posts yet.</p>
-      </div>
-    ) : (
-      <div class="space-y-14">
-        {groupedEntries.map(([key, groupPosts]) => (
-          <section data-month-section={key}>
-            <h2 class="mb-6 border-b border-[#e5e5e5] pb-3 text-xs font-medium uppercase tracking-widest text-warm-muted">
-              {formatMonthLabel(key)}
-            </h2>
-            <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {groupPosts.map((post) => (
-                <PostCard
-                  title={post.data.title}
-                  date={post.data.date}
-                  summary={post.data.summary}
-                  tags={post.data.tags}
-                  cover={post.data.cover}
-                  href={`/blog/daily/${post.slug}`}
-                />
-              ))}
-            </div>
-          </section>
-        ))}
-      </div>
-    )}
-  </div>
+  {/* ── Embedded data ── */}
+  <script id="dc-data" type="application/json" set:html={entriesJson}></script>
 </BaseLayout>
+
+{/* ============================================================
+    Styles — scoped via .dc-page prefix
+    ============================================================ */}
+<style is:global>
+.dc-page {
+  --dc-paper:   #FFF8F0;
+  --dc-paper-2: #FFF3E5;
+  --dc-paper-3: #F5ECD8;
+  --dc-paper-4: #EDE0CC;
+  --dc-paper-5: #E3D4BC;
+  --dc-ink:     #2C1810;
+  --dc-ink-2:   #6B4E3D;
+  --dc-ink-3:   #A6856E;
+  --dc-ink-4:   #C8AFA0;
+  --dc-border:  #E8D5BB;
+  --dc-border-2:#D4BCA0;
+  --dc-acc:     #C4703A;
+  --dc-acc-2:   #E8956A;
+  --dc-acc-3:   #F5C4A0;
+  --dc-res:     #5F8A6E;
+  --dc-res-2:   #8ABD9A;
+  --dc-res-bg:  #EEF5EE;
+  --dc-blg:     #7A68A8;
+  --dc-blg-2:   #A498C8;
+  --dc-blg-bg:  #F0EEF7;
+
+  background: var(--dc-paper);
+  color: var(--dc-ink);
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.dc-inner {
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 48px 28px 80px;
+}
+
+/* ─── HEADER ─── */
+.dc-header {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  margin-bottom: 24px;
+}
+.dc-eyebrow {
+  font-family: 'Caveat', cursive; font-size: 17px;
+  color: var(--dc-acc-2); margin-bottom: 4px;
+}
+.dc-h-title {
+  font-family: 'Lora', serif !important; font-size: 48px; font-weight: 600;
+  letter-spacing: -.025em; line-height: 1;
+}
+.dc-h-title em { font-style: italic; color: var(--dc-acc); }
+.dc-h-right { text-align: right; padding-bottom: 2px; }
+.dc-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--dc-paper-3); border: 1px solid var(--dc-border);
+  border-radius: 20px; padding: 4px 12px; font-size: 11px; color: var(--dc-ink-2); margin-bottom: 5px;
+}
+.dc-badge-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--dc-acc); }
+.dc-h-count { font-family: 'Lora', serif; font-size: 38px; line-height: 1; color: var(--dc-acc); }
+.dc-h-count-sub { font-size: 11px; color: var(--dc-ink-3); margin-top: 1px; }
+
+.dc-rule { height: 1px; background: var(--dc-border); margin-bottom: 20px; }
+
+/* ─── MONTH NAV ─── */
+.dc-month-nav {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;
+}
+.dc-month-label {
+  font-family: 'Lora', serif; font-size: 12px; font-weight: 600;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--dc-ink-2);
+}
+.dc-nav-btns { display: flex; gap: 6px; }
+.dc-nav-btn {
+  width: 26px; height: 26px; border-radius: 7px;
+  border: 1px solid var(--dc-border); background: none;
+  color: var(--dc-ink-3); cursor: pointer; font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.dc-nav-btn:hover:not(:disabled) { border-color: var(--dc-border-2); color: var(--dc-ink); background: var(--dc-paper-3); }
+.dc-nav-btn:disabled { opacity: .35; cursor: default; }
+
+/* ─── LEGEND ─── */
+.dc-legend { display: flex; gap: 16px; }
+.dc-leg-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--dc-ink-3); }
+.dc-leg-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+/* ─── BENTO ─── */
+.dc-bento { display: grid; grid-template-columns: 1fr 288px; gap: 14px; align-items: start; }
+
+/* ─── CALENDAR TILE ─── */
+.dc-cal-tile {
+  background: var(--dc-paper-2); border: 1.5px solid var(--dc-border);
+  border-radius: 20px; overflow: hidden;
+}
+.dc-cal-dow {
+  display: grid; grid-template-columns: repeat(7,1fr);
+  border-bottom: 1.5px solid var(--dc-border); background: var(--dc-paper-3);
+}
+.dc-cal-dh {
+  padding: 9px 0 7px; text-align: center; font-size: 10px;
+  font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--dc-ink-3);
+}
+.dc-cal-grid { display: grid; grid-template-columns: repeat(7,1fr); }
+
+/* 4:3 cells */
+.dc-page .cal-cell {
+  border-right: 1px solid var(--dc-border); border-bottom: 1px solid var(--dc-border);
+  position: relative; padding-top: 75%; transition: background .14s;
+}
+.dc-page .cal-cell:nth-child(7n) { border-right: none; }
+.dc-page .cal-cell.last-row { border-bottom: none; }
+.dc-page .cell-inner {
+  position: absolute; inset: 0; padding: 8px 9px 6px;
+  display: flex; flex-direction: column;
+}
+.dc-page .cal-cell.empty { pointer-events: none; background: transparent; }
+.dc-page .cal-cell.has-entry { cursor: pointer; }
+.dc-page .cal-cell.has-entry:hover .cell-inner-bg { opacity: 1; }
+.dc-page .cell-inner-bg {
+  position: absolute; inset: 0; background: var(--dc-paper-3);
+  opacity: 0; transition: opacity .14s; pointer-events: none;
+}
+.dc-page .cal-cell.has-entry.active .cell-inner-bg { opacity: 1; }
+.dc-page .cal-cell.has-entry.active { outline: 2px solid var(--dc-acc); outline-offset: -2px; border-radius: 2px; }
+
+/* Day number */
+.dc-page .c-num {
+  font-family: 'Caveat', cursive; font-size: 18px; font-weight: 600;
+  line-height: 1; color: var(--dc-ink-4); flex-shrink: 0; position: relative; z-index: 1;
+}
+.dc-page .has-entry .c-num { color: var(--dc-acc); }
+
+/* Category rows inside cells */
+.dc-page .c-cats { display: flex; flex-direction: column; gap: 3px; margin-top: 5px; flex: 1; position: relative; z-index: 1; }
+.dc-page .c-cat { display: flex; align-items: center; gap: 4px; }
+.dc-page .c-cat-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+.dc-page .c-cat-label { font-size: 10px; font-weight: 500; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dc-page .dot-cc  { background: var(--dc-acc); }
+.dc-page .dot-res { background: var(--dc-res); }
+.dc-page .dot-blg { background: var(--dc-blg); }
+.dc-page .label-cc  { color: var(--dc-acc); }
+.dc-page .label-res { color: var(--dc-res); }
+.dc-page .label-blg { color: var(--dc-blg); }
+
+/* ─── SIDEBAR ─── */
+.dc-sidebar { display: flex; flex-direction: column; gap: 12px; }
+.dc-sb-default { display: flex; flex-direction: column; gap: 12px; }
+.dc-sb-detail  { display: none; flex-direction: column; gap: 0; }
+.dc-sidebar.has-selection .dc-sb-default { display: none; }
+.dc-sidebar.has-selection .dc-sb-detail  { display: flex; }
+
+/* Stats card */
+.dc-stat-card {
+  background: var(--dc-paper-2); border: 1.5px solid var(--dc-border);
+  border-radius: 18px; padding: 16px 18px;
+}
+.dc-sc-label { font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--dc-ink-3); margin-bottom: 5px; }
+.dc-sc-val { font-family: 'Lora', serif; font-size: 28px; color: var(--dc-acc); line-height: 1; }
+.dc-sc-sub { font-size: 11px; color: var(--dc-ink-3); margin-top: 1px; }
+.dc-streak-row { display: flex; gap: 2px; margin-top: 8px; flex-wrap: wrap; }
+.dc-page .sdot { width: 7px; height: 7px; border-radius: 2px; background: var(--dc-paper-4); }
+.dc-page .sdot.on { background: var(--dc-acc-3); }
+
+/* Mini list */
+.dc-mini-list {
+  background: var(--dc-paper-2); border: 1.5px solid var(--dc-border);
+  border-radius: 18px; overflow: hidden;
+}
+.dc-ml-head {
+  padding: 12px 16px 10px; border-bottom: 1px solid var(--dc-border);
+  font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--dc-ink-3);
+}
+.dc-page .mini-entry {
+  padding: 10px 16px; border-bottom: 1px solid var(--dc-border);
+  cursor: pointer; transition: background .13s;
+}
+.dc-page .mini-entry:last-child { border-bottom: none; }
+.dc-page .mini-entry:hover { background: var(--dc-paper-3); }
+.dc-page .mini-entry.active { background: var(--dc-paper-3); border-left: 3px solid var(--dc-acc); padding-left: 13px; }
+.dc-page .me-top { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 2px; }
+.dc-page .me-date { font-family: 'Caveat', cursive; font-size: 16px; font-weight: 600; color: var(--dc-acc); line-height: 1; }
+.dc-page .me-wday { font-size: 10px; color: var(--dc-ink-3); text-transform: uppercase; letter-spacing: .05em; }
+.dc-page .me-title { font-size: 12px; color: var(--dc-ink); font-weight: 500; line-height: 1.3; margin-bottom: 4px; }
+.dc-page .me-dots { display: flex; gap: 5px; }
+.dc-page .me-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+/* ─── DETAIL PANEL ─── */
+.dc-detail-card {
+  background: var(--dc-paper-2); border: 1.5px solid var(--dc-border);
+  border-radius: 18px; overflow: hidden;
+}
+.dc-det-head { padding: 18px 18px 14px; border-bottom: 1px solid var(--dc-border); }
+.dc-det-top { display: flex; align-items: flex-start; justify-content: space-between; }
+.dc-det-day { font-family: 'Caveat', cursive; font-size: 48px; font-weight: 700; color: var(--dc-acc); line-height: 1; }
+.dc-det-close {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--dc-paper-3); border: 1px solid var(--dc-border);
+  color: var(--dc-ink-3); cursor: pointer; font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s; flex-shrink: 0; margin-top: 4px;
+}
+.dc-det-close:hover { background: var(--dc-acc); border-color: var(--dc-acc); color: #fff; }
+.dc-det-datelabel { font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--dc-ink-3); margin-top: 1px; }
+.dc-det-title { font-family: 'Lora', serif; font-size: 15px; font-weight: 600; color: var(--dc-ink); margin-top: 8px; line-height: 1.3; }
+.dc-det-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+.dc-page .dtag { font-size: 10px; padding: 2px 8px; border-radius: 20px; background: var(--dc-paper-3); color: var(--dc-ink-2); border: 1px solid var(--dc-border); }
+
+/* Progress bar */
+.dc-det-progress { padding: 10px 18px; border-bottom: 1px solid var(--dc-border); background: var(--dc-paper-3); }
+.dc-det-progress.hidden { display: none; }
+.dc-prog-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+.dc-prog-label { font-size: 10px; color: var(--dc-ink-3); }
+.dc-prog-pct { font-size: 11px; font-weight: 600; color: var(--dc-acc); }
+.dc-prog-bar { height: 3px; border-radius: 2px; background: var(--dc-paper-5); overflow: hidden; }
+.dc-prog-fill { height: 100%; background: var(--dc-acc); border-radius: 2px; transition: width .35s cubic-bezier(.4,0,.2,1); }
+
+.dc-det-body { overflow-y: auto; max-height: 420px; }
+
+/* Sections */
+.dc-page .det-sec-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 18px 8px; border-bottom: 1px solid var(--dc-border);
+  position: sticky; top: 0; background: var(--dc-paper-2); z-index: 1;
+}
+.dc-page .det-sec-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.dc-page .det-sec-label { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.dc-page .det-sec-count { font-size: 10px; color: var(--dc-ink-4); margin-left: auto; }
+
+/* Task rows */
+.dc-page .det-task {
+  display: flex; align-items: flex-start; gap: 9px;
+  padding: 7px 18px; border-bottom: 1px solid var(--dc-border);
+  cursor: pointer; transition: background .12s; user-select: none;
+}
+.dc-page .det-task:last-child { border-bottom: none; }
+.dc-page .det-task:hover { background: var(--dc-paper-3); }
+.dc-page .det-task:hover .d-chk { border-color: var(--dc-acc-2); }
+
+.dc-page .d-chk {
+  width: 15px; height: 15px; border-radius: 4px;
+  border: 1.5px solid var(--dc-border-2); background: var(--dc-paper);
+  flex-shrink: 0; margin-top: 1px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .2s cubic-bezier(.34,1.56,.64,1);
+}
+.dc-page .d-chk.done { transform: scale(1.08); }
+.dc-page .d-chk.done-cc  { background: var(--dc-acc); border-color: var(--dc-acc); }
+.dc-page .d-chk.done-res { background: var(--dc-res); border-color: var(--dc-res); }
+.dc-page .d-chk.done-blg { background: var(--dc-blg); border-color: var(--dc-blg); }
+.dc-page .d-chk.done::after {
+  content: ''; width: 8px; height: 5px;
+  border-left: 1.5px solid #fff; border-bottom: 1.5px solid #fff;
+  transform: rotate(-45deg) translateY(-1px); display: block;
+}
+.dc-page .d-txt { font-size: 12px; line-height: 1.5; color: var(--dc-ink-2); flex: 1; transition: opacity .18s; }
+.dc-page .d-txt.done { text-decoration: line-through; opacity: .35; }
+
+/* Detail footer */
+.dc-det-footer { padding: 12px 18px; border-top: 1px solid var(--dc-border); }
+.dc-det-footer a {
+  font-size: 12px; font-weight: 500; color: var(--dc-acc);
+  text-decoration: none; transition: color .15s;
+}
+.dc-det-footer a:hover { color: var(--dc-ink); text-decoration: underline; }
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 700px) {
+  .dc-bento { grid-template-columns: 1fr; }
+  .dc-sidebar { display: none; }
+  .dc-h-title { font-size: 36px; }
+  .dc-inner { padding: 28px 14px 60px; }
+  .dc-month-nav { flex-direction: column; gap: 10px; align-items: flex-start; }
+}
+</style>
+
+{/* ============================================================
+    Client-side Calendar Logic
+    ============================================================ */}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const raw = document.getElementById('dc-data')?.textContent;
+  if (!raw) return;
+  const DATA = JSON.parse(raw);
+  const { entries, months } = DATA;
+
+  let currentMonthIdx = months.length - 1;
+  let activeDate = null;
+  const taskState = {};
+
+  // Init task state
+  for (const e of Object.values(entries)) {
+    for (const s of e.sections) {
+      for (const t of s.tasks) { taskState[t.id] = t.done; }
+    }
+  }
+
+  const CAT_CFG = {
+    cc:  { dot:'dot-cc',  label:'CC',  fullLabel:'Claude Code', doneClass:'done-cc' },
+    res: { dot:'dot-res', label:'科研', fullLabel:'科研',       doneClass:'done-res' },
+    blg: { dot:'dot-blg', label:'Blog', fullLabel:'Blog',      doneClass:'done-blg' },
+  };
+
+  const MN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  function curMonth() { return months[currentMonthIdx]; }
+  function monthEntries(mk) {
+    return Object.entries(entries).filter(([d]) => d.startsWith(mk)).sort(([a],[b]) => b.localeCompare(a));
+  }
+  function fmtMonth(mk) { const [y,m] = mk.split('-').map(Number); return MN[m-1]+' '+y; }
+  function fmtShort(mk) { const [y,m] = mk.split('-').map(Number); return MN[m-1].slice(0,3); }
+
+  /* ── Header ── */
+  function updateHeader() {
+    const mk = curMonth();
+    const me = monthEntries(mk);
+    document.getElementById('dc-month-badge').textContent = fmtMonth(mk);
+    document.getElementById('dc-entry-count').textContent = me.length;
+    document.getElementById('dc-month-label').textContent = fmtMonth(mk).toUpperCase();
+    document.getElementById('dc-stat-label').textContent = fmtShort(mk)+' Activity';
+    document.getElementById('dc-stat-val').textContent = me.length;
+    document.getElementById('dc-prev').disabled = currentMonthIdx === 0;
+    document.getElementById('dc-next').disabled = currentMonthIdx === months.length - 1;
+  }
+
+  /* ── Calendar Grid ── */
+  function buildCal() {
+    const grid = document.getElementById('dc-cal-grid');
+    grid.innerHTML = '';
+    const mk = curMonth();
+    const [yr, mo] = mk.split('-').map(Number);
+    const firstDay = new Date(yr, mo-1, 1).getDay();
+    const total = new Date(yr, mo, 0).getDate();
+    const cells = Math.ceil((firstDay + total) / 7) * 7;
+
+    for (let i = 0; i < cells; i++) {
+      const day = i - firstDay + 1;
+      const isLast = i >= cells - 7;
+      const cell = document.createElement('div');
+
+      if (day < 1 || day > total) {
+        cell.className = 'cal-cell empty' + (isLast ? ' last-row' : '');
+        cell.innerHTML = '<div class="cell-inner"></div>';
+        grid.appendChild(cell);
+        continue;
+      }
+
+      const ds = mk + '-' + String(day).padStart(2,'0');
+      const e = entries[ds];
+      cell.className = 'cal-cell ' + (e ? 'has-entry' : 'normal') + (isLast ? ' last-row' : '');
+      cell.dataset.date = ds;
+
+      let cats = '';
+      if (e) {
+        cats = '<div class="c-cats">' + e.cats.map(c => {
+          const cfg = CAT_CFG[c];
+          return '<div class="c-cat"><span class="c-cat-dot '+cfg.dot+'"></span><span class="c-cat-label '+cfg.dot.replace('dot-','label-')+'">'+cfg.label+'</span></div>';
+        }).join('') + '</div>';
+      }
+
+      cell.innerHTML = '<div class="cell-inner-bg"></div><div class="cell-inner"><span class="c-num">'+day+'</span>'+cats+'</div>';
+
+      if (e) {
+        cell.tabIndex = 0;
+        cell.setAttribute('role','button');
+        const d = ds;
+        cell.addEventListener('click', () => selectDate(d));
+        cell.addEventListener('keydown', ev => { if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();selectDate(d);} });
+      }
+      grid.appendChild(cell);
+    }
+  }
+
+  /* ── Streak dots ── */
+  function buildStreak() {
+    const el = document.getElementById('dc-streak');
+    el.innerHTML = '';
+    const mk = curMonth();
+    const [yr,mo] = mk.split('-').map(Number);
+    const total = new Date(yr,mo,0).getDate();
+    for (let d=1; d<=total; d++) {
+      const ds = mk+'-'+String(d).padStart(2,'0');
+      const dot = document.createElement('div');
+      dot.className = 'sdot'+(entries[ds] ? ' on' : '');
+      el.appendChild(dot);
+    }
+  }
+
+  /* ── Mini list ── */
+  function buildMini() {
+    const el = document.getElementById('dc-mini-entries');
+    el.innerHTML = '';
+    const me = monthEntries(curMonth());
+    if (!me.length) { el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--dc-ink-3);font-size:12px">No entries this month</div>'; return; }
+    for (const [ds, e] of me) {
+      const day = parseInt(ds.split('-')[2]);
+      const div = document.createElement('div');
+      div.className = 'mini-entry'; div.dataset.date = ds;
+      div.innerHTML =
+        '<div class="me-top"><span class="me-date">'+fmtShort(curMonth())+' '+day+'</span><span class="me-wday">'+e.wdayShort+'</span></div>'+
+        '<div class="me-title">'+e.title+'</div>'+
+        '<div class="me-dots">'+e.cats.map(c=>'<span class="me-dot" style="background:var(--dc-'+(c==='cc'?'acc':c==='res'?'res':'blg')+')"></span>').join('')+'</div>';
+      div.addEventListener('click', () => selectDate(ds));
+      el.appendChild(div);
+    }
+  }
+
+  /* ── Progress ── */
+  function calcPct(ds) {
+    const e = entries[ds]; if(!e) return 0;
+    let t=0,d=0;
+    e.sections.forEach(s=>s.tasks.forEach(tk=>{t++;if(taskState[tk.id])d++;}));
+    return t ? Math.round(d/t*100) : 0;
+  }
+
+  /* ── Select / Detail ── */
+  function selectDate(ds) {
+    if (activeDate === ds) { closeDetail(); return; }
+    activeDate = ds;
+    document.querySelectorAll('.dc-page .cal-cell.active').forEach(c=>c.classList.remove('active'));
+    document.querySelector('.dc-page .cal-cell[data-date="'+ds+'"]')?.classList.add('active');
+    document.querySelectorAll('.dc-page .mini-entry.active').forEach(c=>c.classList.remove('active'));
+    document.querySelector('.dc-page .mini-entry[data-date="'+ds+'"]')?.classList.add('active');
+    renderDetail(ds);
+    document.getElementById('dc-sidebar').classList.add('has-selection');
+  }
+
+  function renderDetail(ds) {
+    const e = entries[ds]; if(!e) return;
+    const day = parseInt(ds.split('-')[2]);
+    document.getElementById('dc-d-day').textContent = day;
+    document.getElementById('dc-d-datelabel').textContent = e.weekday+' \u00b7 '+fmtMonth(curMonth())+' '+day;
+    document.getElementById('dc-d-title').textContent = e.title;
+    document.getElementById('dc-d-tags').innerHTML = e.tags.map(t=>'<span class="dtag">'+t+'</span>').join('');
+
+    const progEl = document.getElementById('dc-det-progress');
+    const body = document.getElementById('dc-det-body');
+
+    if (e.hasTasks && e.sections.length) {
+      progEl.classList.remove('hidden');
+      const pct = calcPct(ds);
+      document.getElementById('dc-prog-pct').textContent = pct+'%';
+      document.getElementById('dc-prog-fill').style.width = pct+'%';
+
+      body.innerHTML = e.sections.map(s => {
+        const cfg = CAT_CFG[s.type];
+        const dc = s.tasks.filter(t=>taskState[t.id]).length;
+        return '<div class="det-section"><div class="det-sec-head">'+
+          '<span class="det-sec-dot '+cfg.dot+'"></span>'+
+          '<span class="det-sec-label '+cfg.dot.replace('dot-','label-')+'">'+s.label+'</span>'+
+          '<span class="det-sec-count">'+dc+'/'+s.tasks.length+'</span></div>'+
+          s.tasks.map(t=>
+            '<div class="det-task" data-id="'+t.id+'" data-date="'+ds+'" data-type="'+s.type+'">'+
+            '<div class="d-chk '+(taskState[t.id]?'done '+cfg.doneClass:'')+'" id="chk-'+t.id+'"></div>'+
+            '<span class="d-txt '+(taskState[t.id]?'done':'')+'" id="txt-'+t.id+'">'+t.text+'</span></div>'
+          ).join('')+'</div>';
+      }).join('');
+
+      body.querySelectorAll('.det-task').forEach(el => {
+        el.addEventListener('click', () => toggleTask(el.dataset.id, el.dataset.date, el.dataset.type));
+      });
+    } else {
+      progEl.classList.add('hidden');
+      body.innerHTML = '<div style="padding:16px 18px;color:var(--dc-ink-2);font-size:13px;line-height:1.6">'+(e.summary||'No structured tasks.')+'</div>';
+    }
+
+    document.getElementById('dc-det-footer').innerHTML = '<a href="/blog/daily/'+e.slug+'">Read full entry \u2192</a>';
+  }
+
+  function toggleTask(id, ds, type) {
+    taskState[id] = !taskState[id];
+    const cfg = CAT_CFG[type];
+    const chk = document.getElementById('chk-'+id);
+    const txt = document.getElementById('txt-'+id);
+    if(chk) chk.className = 'd-chk '+(taskState[id]?'done '+cfg.doneClass:'');
+    if(txt) txt.className = 'd-txt '+(taskState[id]?'done':'');
+    const pct = calcPct(ds);
+    document.getElementById('dc-prog-pct').textContent = pct+'%';
+    document.getElementById('dc-prog-fill').style.width = pct+'%';
+    // Update section counter
+    const e = entries[ds];
+    const sec = e.sections.find(s=>s.type===type);
+    if(sec){
+      const dc = sec.tasks.filter(t=>taskState[t.id]).length;
+      document.querySelectorAll('.dc-page .det-sec-head').forEach(h=>{
+        const lb = h.querySelector('.det-sec-label');
+        if(lb && lb.textContent===sec.label){
+          const cnt = h.querySelector('.det-sec-count');
+          if(cnt) cnt.textContent = dc+'/'+sec.tasks.length;
+        }
+      });
+    }
+  }
+
+  function closeDetail() {
+    activeDate = null;
+    document.querySelectorAll('.dc-page .cal-cell.active').forEach(c=>c.classList.remove('active'));
+    document.querySelectorAll('.dc-page .mini-entry.active').forEach(c=>c.classList.remove('active'));
+    document.getElementById('dc-sidebar').classList.remove('has-selection');
+  }
+
+  function refresh() { closeDetail(); buildCal(); buildStreak(); buildMini(); updateHeader(); }
+
+  /* ── Events ── */
+  document.getElementById('dc-prev').addEventListener('click', () => { if(currentMonthIdx>0){currentMonthIdx--;refresh();} });
+  document.getElementById('dc-next').addEventListener('click', () => { if(currentMonthIdx<months.length-1){currentMonthIdx++;refresh();} });
+  document.getElementById('dc-close-btn').addEventListener('click', closeDetail);
+  document.addEventListener('keydown', ev => { if(ev.key==='Escape') closeDetail(); });
+
+  /* ── Init ── */
+  buildCal(); buildStreak(); buildMini(); updateHeader();
+});
+</script>
